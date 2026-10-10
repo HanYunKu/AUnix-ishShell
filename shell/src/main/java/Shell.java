@@ -69,8 +69,25 @@ public class Shell {
      * @throws Exception if a match class cannot be found
      */
     private static String findCommandClass(String command) throws Exception {
-        // TODO: implement Shell.findCommandClass
-        throw new UnsupportedOperationException("TODO: implement Shell.findCommandClass");
+        File commandDirectory = PATH.toFile();
+        File[] files = commandDirectory.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                String filename = file.getName();
+
+                if (filename.endsWith(".class")) {
+                    String className = filename.substring(0, filename.length() - 6);
+                    String commandName = classNameToCommandName(className);
+
+                    if (commandName.equals(command)) {
+                        return className;
+                    }
+                }
+            }
+        }
+
+        throw new Exception(command + ": command not found");
     }
 
     /**
@@ -103,8 +120,23 @@ public class Shell {
      * Runs the Read-Eval-Print Loop of the Shell. The command "exit" ends the loop.
      */
     public void runRepl() {
-        // TODO: implement Shell.runRepl
-        throw new UnsupportedOperationException("TODO: implement Shell.runRepl");
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.print(COMMAND_PROMPT);
+
+            if (!scanner.hasNextLine()) {
+                break;
+            }
+
+            String command = scanner.nextLine();
+
+            if (command.equals("exit")) {
+                break;
+            }
+
+            processInput(command);
+        }
     }
 
     /**
