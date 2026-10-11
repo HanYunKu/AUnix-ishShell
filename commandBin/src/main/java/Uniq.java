@@ -24,7 +24,61 @@ public class Uniq extends ShellCommand {
 
     @Override
     protected void runCommand() throws IOException {
-        // TODO: implement Uniq.runCommand
-        throw new UnsupportedOperationException("TODO: implement Uniq.runCommand");
+        boolean showCount = false; // added
+        int fileIndex = 0; // added
+
+        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-c")) { // added
+            showCount = true; // added
+            fileIndex = 1; // added
+        } // added
+
+        if (cmdArgs.length - fileIndex > 1) { // added
+            System.err.println("Usage: uniq [-c] [<file>]"); // added
+            return; // added
+        } // added
+
+        if (fileIndex == cmdArgs.length) { // added
+            printUniq(System.in, showCount); // added
+            return; // added
+        } // added
+
+        String filename = cmdArgs[fileIndex]; // added
+
+        try (InputStream input = getFileInput(Path.of(filename))) { // added
+            printUniq(input, showCount); // added
+        } catch (IllegalArgumentException e) { // added
+            System.err.println(e.getMessage()); // added
+        } // added
+    }
+
+    private void printUniq(InputStream input, boolean showCount) throws IOException { // added
+        String previousLine = null; // added
+        int count = 0; // added
+        String line; // added
+
+        while ((line = readLineRaw(input)) != null) { // added
+            if (previousLine == null) { // added
+                previousLine = line; // added
+                count = 1; // added
+            } else if (previousLine.equals(line)) { // added
+                count++; // added
+            } else { // added
+                printLine(previousLine, count, showCount); // added
+                previousLine = line; // added
+                count = 1; // added
+            } // added
+        } // added
+
+        if (previousLine != null) { // added
+            printLine(previousLine, count, showCount); // added
+        } // added
+    }
+
+    private void printLine(String line, int count, boolean showCount) { // added
+        if (showCount) { // added
+            System.out.print(count + " " + line); // added
+        } else { // added
+            System.out.print(line); // added
+        } // added
     }
 }

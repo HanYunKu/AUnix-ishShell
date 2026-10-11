@@ -26,7 +26,45 @@ public class Sort extends ShellCommand {
 
     @Override
     protected void runCommand() throws IOException {
-        // TODO: implement Sort.runCommand
-        throw new UnsupportedOperationException("TODO: implement Sort.runCommand");
+        boolean reverse = false; // added
+        int fileIndex = 0; // added
+        List<String> lines = new ArrayList<>(); // added
+
+        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-r")) { // added
+            reverse = true; // added
+            fileIndex = 1; // added
+        } // added
+
+        if (fileIndex == cmdArgs.length) { // added
+            readLines(System.in, lines); // added
+        } else { // added
+            for (int i = fileIndex; i < cmdArgs.length; i++) { // added
+                String filename = cmdArgs[i]; // added
+
+                try (InputStream input = getFileInput(Path.of(filename))) { // added
+                    readLines(input, lines); // added
+                } catch (IllegalArgumentException e) { // added
+                    System.err.println(e.getMessage()); // added
+                } // added
+            } // added
+        } // added
+
+        Collections.sort(lines); // added
+
+        if (reverse) { // added
+            Collections.reverse(lines); // added
+        } // added
+
+        for (String line : lines) { // added
+            System.out.print(line); // added
+        } // added
+    }
+
+    private void readLines(InputStream input, List<String> lines) throws IOException { // added
+        String line; // added
+
+        while ((line = readLineRaw(input)) != null) { // added
+            lines.add(line); // added
+        } // added
     }
 }
