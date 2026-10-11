@@ -26,68 +26,68 @@ public class Tail extends ShellCommand {
 
     @Override
     protected void runCommand() throws IOException {
-        int count = DEFAULT_COUNT; // added
-        int fileIndex = 0; // added
+        int count = DEFAULT_COUNT;
+        int fileIndex = 0;
 
-        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-n")) { // added
-            if (cmdArgs.length < 2) { // added
-                System.err.println("Usage: tail [-n <count>] [<file>...]"); // added
-                return; // added
-            } // added
+        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-n")) {
+            if (cmdArgs.length < 2) {
+                System.err.println("Usage: tail [-n <count>] [<file>...]");
+                return;
+            }
 
-            try { // added
-                count = Integer.parseInt(cmdArgs[1]); // added
-            } catch (NumberFormatException e) { // added
-                System.err.println("Usage: tail [-n <count>] [<file>...]"); // added
-                return; // added
-            } // added
+            try {
+                count = Integer.parseInt(cmdArgs[1]);
+            } catch (NumberFormatException e) {
+                System.err.println("Usage: tail [-n <count>] [<file>...]");
+                return;
+            }
 
-            fileIndex = 2; // added
-        } // added
+            fileIndex = 2;
+        }
 
-        if (fileIndex == cmdArgs.length) { // added
-            printTail(System.in, count); // added
-            return; // added
-        } // added
+        if (fileIndex == cmdArgs.length) {
+            printTail(System.in, count);
+            return;
+        }
 
-        boolean multipleFiles = cmdArgs.length - fileIndex > 1; // added
-        boolean printedFile = false; // added
+        boolean multipleFiles = cmdArgs.length - fileIndex > 1;
+        boolean printedFile = false;
 
-        for (int i = fileIndex; i < cmdArgs.length; i++) { // added
-            String filename = cmdArgs[i]; // added
+        for (int i = fileIndex; i < cmdArgs.length; i++) {
+            String filename = cmdArgs[i];
 
-            try (InputStream input = getFileInput(Path.of(filename))) { // added
-                if (multipleFiles) { // added
-                    if (printedFile) { // added
-                        System.out.println(); // added
-                    } // added
+            try (InputStream input = getFileInput(Path.of(filename))) {
+                if (multipleFiles) {
+                    if (printedFile) {
+                        System.out.println();
+                    }
 
-                    System.out.println("==> " + filename + " <=="); // added
-                } // added
+                    System.out.println("==> " + filename + " <==");
+                }
 
-                printTail(input, count); // added
-                printedFile = true; // added
-            } catch (IllegalArgumentException e) { // added
-                System.err.println(e.getMessage()); // added
-            } // added
-        } // added
+                printTail(input, count);
+                printedFile = true;
+            } catch (IllegalArgumentException e) {
+                System.err.println(e.getMessage());
+            }
+        }
     }
 
-    private void printTail(InputStream input, int count) throws IOException { // added
-        List<String> lines = new ArrayList<>(); // added
-        String line; // added
+    private void printTail(InputStream input, int count) throws IOException {
+        List<String> lines = new ArrayList<>();
+        String line;
 
-        while ((line = readLineRaw(input)) != null) { // added
-            lines.add(line); // added
-        } // added
+        while ((line = readLineRaw(input)) != null) {
+            lines.add(line);
+        }
 
-        int start = lines.size() - count; // added
-        if (start < 0) { // added
-            start = 0; // added
-        } // added
+        int start = lines.size() - count;
+        if (start < 0) {
+            start = 0;
+        }
 
-        for (int i = start; i < lines.size(); i++) { // added
-            System.out.print(lines.get(i)); // added
-        } // added
+        for (int i = start; i < lines.size(); i++) {
+            System.out.print(lines.get(i));
+        }
     }
 }

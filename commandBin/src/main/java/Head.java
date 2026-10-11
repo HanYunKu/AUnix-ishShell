@@ -23,23 +23,23 @@ public class Head extends ShellCommand {
 
     @Override
     protected void runCommand() throws IOException {
-        int count = DEFAULT_COUNT; // herefixed
-        int fileIndex = 0; // herefixed
+        int count = DEFAULT_COUNT;
+        int fileIndex = 0;
 
-        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-n")) { // herefixed
-            if (cmdArgs.length < 2) { // herefixed
-                System.err.println("Usage: head [-n <count>] [<file>...]"); // herefixed
-                return; // herefixed
-            } // herefixed
+        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-n")) {
+            if (cmdArgs.length < 2) {
+                System.err.println("Usage: head [-n <count>] [<file>...]");
+                return;
+            }
 
-            try { // herefixed
-                count = Integer.parseInt(cmdArgs[1]); // herefixed
-            } catch (NumberFormatException e) { // herefixed
-                System.err.println("Usage: head [-n <count>] [<file>...]"); // herefixed
-                return; // herefixed
-            } // herefixed
+            try {
+                count = Integer.parseInt(cmdArgs[1]);
+            } catch (NumberFormatException e) {
+                System.err.println("Usage: head [-n <count>] [<file>...]");
+                return;
+            }
 
-            fileIndex = 2; // herefixed
+            fileIndex = 2;
         }
 
         if (fileIndex == cmdArgs.length) {
@@ -47,23 +47,23 @@ public class Head extends ShellCommand {
             return;
         }
 
-        boolean multipleFiles = cmdArgs.length - fileIndex > 1; // herefixed
-        boolean printedFile = false; // herefixed
+        boolean multipleFiles = cmdArgs.length - fileIndex > 1;
+        boolean printedFile = false;
 
         for (int i = fileIndex; i < cmdArgs.length; i++) {
             String filename = cmdArgs[i];
 
             try (InputStream input = getFileInput(Path.of(filename))) {
-                if (multipleFiles) { // herefixed
-                    if (printedFile) { // herefixed
-                        System.out.println(); // herefixed
-                    } // herefixed
+                if (multipleFiles) {
+                    if (printedFile) {
+                        System.out.println();
+                    }
 
-                    System.out.println("==> " + filename + " <=="); // herefixed
-                } // herefixed
+                    System.out.println("==> " + filename + " <==");
+                }
 
-                printHead(input, count); // herefixed
-                printedFile = true; // herefixed
+                printHead(input, count);
+                printedFile = true;
             } catch (IllegalArgumentException e) {
                 System.err.println(e.getMessage());
             }

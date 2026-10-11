@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -147,8 +148,42 @@ public class Shell {
      * otherwise the pipeline that was executed (for testing purposes)
      */
     Pipeline processInput(String input) {
-        // TODO: implement Shell.processInput
-        throw new UnsupportedOperationException("TODO: implement Shell.processInput");
+        if (input.isBlank()) {
+            return null;
+        }
+
+        if (tryExecuteBuiltin(input)) {
+            return null;
+        }
+
+        String trimmed = input.trim();
+        if (trimmed.startsWith(">")) {
+            String fileName = trimmed.substring(1).trim();
+            Path target = Paths.get(fileName);
+            if (!target.isAbsolute()) {
+                target = cwd.resolve(target).normalize();
+            }
+            try {
+                Files.createFile(target);
+            } catch (IOException ignored) {
+            }
+            return null;
+        }
+
+        try {
+            Pipeline pipeline = new Pipeline(input);
+            pipeline.executePipeline();
+            if (pipeline.isBackground()) {
+                jobs.add(pipeline);
+            }
+            return pipeline;
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            return null;
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -213,8 +248,40 @@ public class Shell {
      * @return true if the command was a builtin, false otherwise
      */
     private boolean tryExecuteBuiltin(String input) {
-        // TODO: implement Shell.tryExecuteBuiltin
-        throw new UnsupportedOperationException("TODO: implement Shell.tryExecuteBuiltin");
+        String[] args = input.trim().split("\\s+");
+
+        if (args[0].equals("cd")) {
+            if (args.length > 1) {
+                changeDirectory(args[1]);
+            }
+            return true;
+        }
+
+        if (args[0].equals("jobs")) {
+            listJobs();
+            return true;
+        }
+
+        if (args[0].equals("kill")) {
+            List<Integer> ids = new ArrayList<>();
+            for (int i = 1; i < args.length; i++) {
+                try {
+                    int id = Integer.parseInt(args[i]);
+                    if (id <= 0) {
+                        System.err.println("kill: arguments must be job IDs");
+                        return true;
+                    }
+                    ids.add(id);
+                } catch (NumberFormatException e) {
+                    System.err.println("kill: arguments must be job IDs");
+                    return true;
+                }
+            }
+            killJobs(ids);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -229,8 +296,40 @@ public class Shell {
      * @throws IllegalArgumentException if a redirect file is given and it is a directory
      */
     ProcessBuilder buildForkedShell(String command) throws IllegalArgumentException {
-        // TODO: implement Shell.buildForkedShell
-        throw new UnsupportedOperationException("TODO: implement Shell.buildForkedShell");
+        String commandToRun = command.trim();
+        Path redirectTarget = null;
+
+        int redirectIndex = commandToRun.lastIndexOf(">");
+        if (redirectIndex >= 0) {
+            String fileName = commandToRun.substring(redirectIndex + 1).trim();
+            commandToRun = commandToRun.substring(0, redirectIndex).trim();
+            redirectTarget = Paths.get(fileName);
+            if (!redirectTarget.isAbsolute()) {
+                redirectTarget = cwd.resolve(redirectTarget).normalize();
+            }
+            if (Files.isDirectory(redirectTarget)) {
+                throw new IllegalArgumentException(fileName + ": Is a directory");
+            }
+        }
+
+        ProcessBuilder pb = new ProcessBuilder(
+                "java",
+                "-cp",
+                getCurrentClassPath().toString(),
+                "Shell",
+                commandToRun
+        );
+        pb.directory(cwd.toFile());
+        pb.redirectInput(ProcessBuilder.Redirect.PIPE);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+        if (redirectTarget == null) {
+            pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
+        } else {
+            pb.redirectOutput(redirectTarget.toFile());
+        }
+
+        return pb;
     }
 
     /**
@@ -239,8 +338,17 @@ public class Shell {
      * @param pathString the absolute or relative path string to change to
      */
     void changeDirectory(String pathString) {
-        // TODO: implement Shell.changeDirectory
-        throw new UnsupportedOperationException("TODO: implement Shell.changeDirectory");
+        Path path = Paths.get(pathString);
+        if (!path.isAbsolute()) {
+            path = cwd.resolve(path).normalize();
+        }
+
+        if (!Files.exists(path)) {
+            System.err.println("cd: " + pathString + ": No such file or directory");
+            return;
+        }
+
+        cwd = path.toAbsolutePath().normalize();
     }
 
     /**
@@ -249,8 +357,32 @@ public class Shell {
      * Job numbering does not restart unless the job list becomes empty.
      */
     void listJobs() {
-        // TODO: implement Shell.listJobs
-        throw new UnsupportedOperationException("TODO: implement Shell.listJobs");
+        String formatSpecifier = "%-10s%-20s %s%n";
+
+        for (int i = 0; i < jobs.size(); i++) {
+            Pipeline job = jobs.get(i);
+            if (job != null) {
+                System.out.printf(formatSpecifier, "[" + (i + 1) + "]", job.getStatus(), job.getPipelineCommand());
+            }
+        }
+
+        for (int i = 0; i < jobs.size(); i++) {
+            Pipeline job = jobs.get(i);
+            if (job != null && (job.isDone() || job.isTerminated())) {
+                jobs.set(i, null);
+            }
+        }
+
+        boolean anyJobs = false;
+        for (Pipeline job : jobs) {
+            if (job != null) {
+                anyJobs = true;
+                break;
+            }
+        }
+        if (!anyJobs) {
+            jobs.clear();
+        }
     }
 
     /**
@@ -259,8 +391,14 @@ public class Shell {
      * @param ids the ids of the jobs to kill
      */
     void killJobs(List<Integer> ids) {
-        // TODO: implement Shell.killJobs
-        throw new UnsupportedOperationException("TODO: implement Shell.killJobs");
+        for (int id : ids) {
+            int index = id - 1;
+            if (index < 0 || index >= jobs.size() || jobs.get(index) == null) {
+                System.err.println("kill: " + id + ": no such job");
+            } else {
+                jobs.get(index).killPipeline();
+            }
+        }
     }
 
     /**
@@ -284,8 +422,26 @@ public class Shell {
          * @param input the string command for the pipeline
          */
         public Pipeline(String input) throws IllegalArgumentException {
-            // TODO: implement Shell.Pipeline.<init>
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.<init>");
+            pipelineCommand = input.trim();
+            String commandString = pipelineCommand;
+            isBackground = commandString.endsWith("&");
+            if (isBackground) {
+                commandString = commandString.substring(0, commandString.length() - 1).trim();
+            }
+
+            pbs = new ArrayList<>();
+            String[] commands = commandString.split("\\|");
+            for (String command : commands) {
+                pbs.add(buildForkedShell(command.trim()));
+            }
+
+            if (!pbs.isEmpty()) {
+                pbs.getFirst().redirectInput(ProcessBuilder.Redirect.INHERIT);
+                ProcessBuilder last = pbs.getLast();
+                if (last.redirectOutput() == ProcessBuilder.Redirect.PIPE) {
+                    last.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                }
+            }
         }
 
         /**
@@ -296,8 +452,11 @@ public class Shell {
          * @return the list of processes in the pipeline
          */
         public List<Process> executePipeline() throws Exception {
-            // TODO: implement Shell.Pipeline.executePipeline
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.executePipeline");
+            processes = ProcessBuilder.startPipeline(pbs);
+            if (!isBackground) {
+                waitFor();
+            }
+            return processes;
         }
 
         /**
@@ -305,8 +464,13 @@ public class Shell {
          * Does nothing if {@code executePipeline()} has not been called.
          */
         void waitFor() throws InterruptedException {
-            // TODO: implement Shell.Pipeline.waitFor
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.waitFor");
+            if (processes == null) {
+                return;
+            }
+            for (Process process : processes) {
+                process.waitFor();
+            }
+            isDone = true;
         }
 
         /**
@@ -315,8 +479,24 @@ public class Shell {
          * before returning.
          */
         public void killPipeline() {
-            // TODO: implement Shell.Pipeline.killPipeline
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.killPipeline");
+            if (processes == null) {
+                terminated = true;
+                isDone = true;
+                return;
+            }
+
+            for (Process process : processes) {
+                process.destroy();
+            }
+            for (Process process : processes) {
+                try {
+                    process.waitFor();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            terminated = true;
+            isDone = true;
         }
 
         /**
@@ -325,8 +505,16 @@ public class Shell {
          * @return false if any processes are still alive, otherwise true
          */
         public boolean isDone() {
-            // TODO: implement Shell.Pipeline.isDone
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.isDone");
+            if (processes == null) {
+                return isDone;
+            }
+            for (Process process : processes) {
+                if (process.isAlive()) {
+                    return false;
+                }
+            }
+            isDone = true;
+            return true;
         }
 
         /**
@@ -335,8 +523,7 @@ public class Shell {
          * @return true if pipeline runs in the background, false if runs in the foreground
          */
         public boolean isBackground() {
-            // TODO: implement Shell.Pipeline.isBackground
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.isBackground");
+            return isBackground;
         }
 
         /**
@@ -345,8 +532,7 @@ public class Shell {
          * @return true if {@code killPipeline} was called, otherwise false
          */
         public boolean isTerminated() {
-            // TODO: implement Shell.Pipeline.isTerminated
-            throw new UnsupportedOperationException("TODO: implement Shell.Pipeline.isTerminated");
+            return terminated;
         }
 
         public String getPipelineCommand() {

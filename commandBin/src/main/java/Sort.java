@@ -26,45 +26,45 @@ public class Sort extends ShellCommand {
 
     @Override
     protected void runCommand() throws IOException {
-        boolean reverse = false; // added
-        int fileIndex = 0; // added
-        List<String> lines = new ArrayList<>(); // added
+        boolean reverse = false;
+        int fileIndex = 0;
+        List<String> lines = new ArrayList<>();
 
-        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-r")) { // added
-            reverse = true; // added
-            fileIndex = 1; // added
-        } // added
+        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-r")) {
+            reverse = true;
+            fileIndex = 1;
+        }
 
-        if (fileIndex == cmdArgs.length) { // added
-            readLines(System.in, lines); // added
-        } else { // added
-            for (int i = fileIndex; i < cmdArgs.length; i++) { // added
-                String filename = cmdArgs[i]; // added
+        if (fileIndex == cmdArgs.length) {
+            readLines(System.in, lines);
+        } else {
+            for (int i = fileIndex; i < cmdArgs.length; i++) {
+                String filename = cmdArgs[i];
 
-                try (InputStream input = getFileInput(Path.of(filename))) { // added
-                    readLines(input, lines); // added
-                } catch (IllegalArgumentException e) { // added
-                    System.err.println(e.getMessage()); // added
-                } // added
-            } // added
-        } // added
+                try (InputStream input = getFileInput(Path.of(filename))) {
+                    readLines(input, lines);
+                } catch (IllegalArgumentException e) {
+                    System.err.println(e.getMessage());
+                }
+            }
+        }
 
-        Collections.sort(lines); // added
+        Collections.sort(lines);
 
-        if (reverse) { // added
-            Collections.reverse(lines); // added
-        } // added
+        if (reverse) {
+            Collections.reverse(lines);
+        }
 
-        for (String line : lines) { // added
-            System.out.print(line); // added
-        } // added
+        for (String line : lines) {
+            System.out.print(line);
+        }
     }
 
-    private void readLines(InputStream input, List<String> lines) throws IOException { // added
-        String line; // added
+    private void readLines(InputStream input, List<String> lines) throws IOException {
+        String line;
 
-        while ((line = readLineRaw(input)) != null) { // added
-            lines.add(line); // added
-        } // added
+        while ((line = readLineRaw(input)) != null) {
+            lines.add(line);
+        }
     }
 }

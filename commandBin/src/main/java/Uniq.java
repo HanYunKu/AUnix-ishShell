@@ -24,61 +24,61 @@ public class Uniq extends ShellCommand {
 
     @Override
     protected void runCommand() throws IOException {
-        boolean showCount = false; // added
-        int fileIndex = 0; // added
+        boolean showCount = false;
+        int fileIndex = 0;
 
-        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-c")) { // added
-            showCount = true; // added
-            fileIndex = 1; // added
-        } // added
+        if (cmdArgs.length >= 1 && cmdArgs[0].equals("-c")) {
+            showCount = true;
+            fileIndex = 1;
+        }
 
-        if (cmdArgs.length - fileIndex > 1) { // added
-            System.err.println("Usage: uniq [-c] [<file>]"); // added
-            return; // added
-        } // added
+        if (cmdArgs.length - fileIndex > 1) {
+            System.err.println("Usage: uniq [-c] [<file>]");
+            return;
+        }
 
-        if (fileIndex == cmdArgs.length) { // added
-            printUniq(System.in, showCount); // added
-            return; // added
-        } // added
+        if (fileIndex == cmdArgs.length) {
+            printUniq(System.in, showCount);
+            return;
+        }
 
-        String filename = cmdArgs[fileIndex]; // added
+        String filename = cmdArgs[fileIndex];
 
-        try (InputStream input = getFileInput(Path.of(filename))) { // added
-            printUniq(input, showCount); // added
-        } catch (IllegalArgumentException e) { // added
-            System.err.println(e.getMessage()); // added
-        } // added
+        try (InputStream input = getFileInput(Path.of(filename))) {
+            printUniq(input, showCount);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        }
     }
 
-    private void printUniq(InputStream input, boolean showCount) throws IOException { // added
-        String previousLine = null; // added
-        int count = 0; // added
-        String line; // added
+    private void printUniq(InputStream input, boolean showCount) throws IOException {
+        String previousLine = null;
+        int count = 0;
+        String line;
 
-        while ((line = readLineRaw(input)) != null) { // added
-            if (previousLine == null) { // added
-                previousLine = line; // added
-                count = 1; // added
-            } else if (previousLine.equals(line)) { // added
-                count++; // added
-            } else { // added
-                printLine(previousLine, count, showCount); // added
-                previousLine = line; // added
-                count = 1; // added
-            } // added
-        } // added
+        while ((line = readLineRaw(input)) != null) {
+            if (previousLine == null) {
+                previousLine = line;
+                count = 1;
+            } else if (previousLine.equals(line)) {
+                count++;
+            } else {
+                printLine(previousLine, count, showCount);
+                previousLine = line;
+                count = 1;
+            }
+        }
 
-        if (previousLine != null) { // added
-            printLine(previousLine, count, showCount); // added
-        } // added
+        if (previousLine != null) {
+            printLine(previousLine, count, showCount);
+        }
     }
 
-    private void printLine(String line, int count, boolean showCount) { // added
-        if (showCount) { // added
-            System.out.print(count + " " + line); // added
-        } else { // added
-            System.out.print(line); // added
-        } // added
+    private void printLine(String line, int count, boolean showCount) {
+        if (showCount) {
+            System.out.print(count + " " + line);
+        } else {
+            System.out.print(line);
+        }
     }
 }
